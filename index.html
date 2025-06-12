@@ -7,30 +7,408 @@
     <style>
         body {
             font-family: 'Arial Black', Arial, sans-serif;
-            background: #22223b;
-            color: #ffe600;
+            background: #355C7D; /* Deep blue */
+            color: #F8B195; /* Light pink */
             text-align: center;
             padding: 40px;
         }
         h1, h2 {
-            color: #ffe600;
-            text-shadow: 2px 2px 0 #000, 4px 4px 0 #0057b7;
+            color: #F8B195;
+            text-shadow: 2px 2px 0 #6C5B7B, 4px 4px 0 #355C7D;
+        }
+        canvas {
+            background: #F67280; /* Soft coral */
+            margin-top: 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px #6C5B7B99;
+            border: 4px solid #C06C84;
         }
         .pacman-img {
             max-width: 200px;
             width: 100%;
             border-radius: 50%;
-            box-shadow: 0 4px 24px #ffe60099;
+            box-shadow: 0 4px 24px #C06C8499;
             margin: 24px auto 0 auto;
             display: block;
-            background: #000;
-            border: 4px solid #ffe600;
+            background: #6C5B7B;
+            border: 4px solid #F8B195;
+        }
+        /* Accent color for power-ups, score, etc. */
+        .accent {
+            color: #C06C84;
+        }
+        /* Custom button for game over/restart */
+        .game-btn {
+            background: #F67280;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 32px;
+            font-size: 1.2em;
+            font-family: 'Arial Black', Arial, sans-serif;
+            margin-top: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px #355C7D55;
+            transition: background 0.2s;
+        }
+        .game-btn:hover {
+            background: #C06C84;
         }
     </style>
 </head>
 <body>
     <h1>Derek Sun</h1>
-    <h2>Sonic-Inspired Side Scrolling RPG</h2>
+    <h2>Power-Up Battle Game</h2>
     <img src="Pac-Man-0.webp" alt="Pac-Man" class="pacman-img">
+    <canvas id="battleGame" width="800" height="300" style="background:#222;display:block;margin:32px auto 0 auto;border-radius:12px;"></canvas>
+    <script>
+    // Battle game with fixed grappling and visual string
+    const canvas = document.getElementById('battleGame');
+    const ctx = canvas.getContext('2d');
+    const groundY = 250;
+    let player = { x: 100, y: groundY, vy: 0, w: 32, h: 32, onGround: true, vx: 0, health: 100, attacking: false, attackTimer: 0, power: null, powerTimer: 0, grappling: false, grappleTarget: null, grappleProgress: 0, hasGrapple: false };
+    let keys = {};
+    let powerUps = [
+        {x: 350, y: groundY, type: 'heal', active: true},
+        {x: 600, y: groundY, type: 'strength', active: true},
+        {x: 200, y: groundY, type: 'grapple', active: true}
+    ];
+    let airBlocks = [
+        {x: 300, y: 180, w: 40, h: 10},
+        {x: 500, y: 120, w: 40, h: 10},
+        {x: 700, y: 80, w: 40, h: 10}
+    ];
+    let enemies = [
+        {x: 700, y: groundY, w: 32, h: 32, health: 60, alive: true, attackTimer: 0, vx: 0, vy: 0}
+    ];
+    let bullets = [];
+    let score = 0;
+    let grappleCooldown = 0;
+    document.addEventListener('keydown', e => { keys[e.key] = true; });
+    document.addEventListener('keyup', e => { keys[e.key] = false; });
+    function update() {
+        // Move player
+        if (!player.grappling) {
+            if (keys['ArrowRight'] || keys['d']) player.vx = 4;
+            else if (keys['ArrowLeft'] || keys['a']) player.vx = -4;
+            else player.vx = 0;
+            if ((keys[' '] || keys['ArrowUp'] || keys['w']) && player.onGround) {
+                player.vy = -10;
+                player.onGround = false;
+            }
+        }
+        // Grapple (now allowed mid-air)
+        if (player.power === 'grapple' && keys['k'] && !player.grappling) {
+            // Find closest air block in range
+            let closest = null, minDist = 120;
+            for (let b of airBlocks) {
+                let bx = b.x + b.w/2, by = b.y;
+                let dist = Math.hypot(player.x+player.w/2 - bx, player.y - by);
+                if (dist < minDist) { minDist = dist; closest = b; }
+            }
+            if (closest) {
+                player.grappling = true;
+                player.grappleTarget = {x: closest.x + closest.w/2, y: closest.y};
+                player.grappleProgress = 0;
+            }
+        }
+        if (player.grappling && player.grappleTarget) {
+            // Move player toward grapple target
+            let px = player.x + player.w/2, py = player.y;
+            let dx = player.grappleTarget.x - px;
+            let dy = player.grappleTarget.y - py;
+            let dist = Math.hypot(dx, dy);
+            let step = Math.min(16, dist);
+            if (dist > 8) {
+                player.x += (dx/dist) * step;
+                player.y += (dy/dist) * step;
+                player.vy = 0;
+                player.grappleProgress = 1;
+            } else {
+                // Place player just above the block to avoid freeze
+                player.x = player.grappleTarget.x - player.w/2;
+                player.y = player.grappleTarget.y - player.h - 1; // 1px above
+                player.grappling = false;
+                player.grappleTarget = null;
+                player.grappleProgress = 0;
+                player.vy = -2; // Give a small upward velocity
+                player.onGround = false;
+                grappleCooldown = 5; // Skip landing logic for a few frames
+            }
+        }
+        // Attack
+        if (keys['j'] && !player.attacking) {
+            player.attacking = true;
+            player.attackTimer = 10;
+        }
+        if (player.attacking) {
+            player.attackTimer--;
+            if (player.attackTimer <= 0) player.attacking = false;
+            // Player can hit enemy while attacking
+            for (let enemy of enemies) {
+                if (!enemy.alive) continue;
+                let dist = Math.hypot((player.x+player.w/2)-(enemy.x+enemy.w/2), (player.y+player.h/2)-(enemy.y+enemy.h/2));
+                if (dist < 40 && enemy.health > 0) {
+                    enemy.health -= (player.power === 'strength' ? 20 : 10);
+                    if (enemy.health <= 0) {
+                        enemy.alive = false;
+                        score += 100;
+                    }
+                }
+            }
+        }
+        if (!player.grappling) {
+            player.x += player.vx;
+            player.y += player.vy;
+            player.vy += 0.5; // gravity
+        }
+        // Land on ground
+        if (player.y >= groundY) {
+            player.y = groundY;
+            player.vy = 0;
+            player.onGround = true;
+        } else {
+            player.onGround = false;
+        }
+        // Land on air blocks
+        if (grappleCooldown > 0) {
+            grappleCooldown--;
+        } else {
+            for (let b of airBlocks) {
+                if (
+                    player.x + player.w > b.x &&
+                    player.x < b.x + b.w &&
+                    player.y + player.h > b.y &&
+                    player.y + player.h < b.y + b.h + 10 &&
+                    player.vy >= 0
+                ) {
+                    player.y = b.y - player.h;
+                    player.vy = 0;
+                    player.onGround = true;
+                }
+            }
+        }
+        // Power-up collection
+        for (let p of powerUps) {
+            if (p.active && Math.abs(player.x - p.x) < 28 && Math.abs(player.y - p.y) < 28) {
+                if (p.type === 'heal') {
+                    player.health = Math.min(100, player.health + 40);
+                } else if (p.type === 'strength') {
+                    player.power = 'strength';
+                    player.powerTimer = 200;
+                } else if (p.type === 'grapple') {
+                    player.hasGrapple = true;
+                    player.power = 'grapple';
+                    player.powerTimer = 999999; // Infinite
+                }
+                p.active = false;
+            }
+        }
+        // Infinite grapple after power-up
+        if (player.hasGrapple) player.power = 'grapple';
+        // Enemy logic: chase player and shoot
+        for (let enemy of enemies) {
+            if (!enemy.alive) continue;
+            let dx = player.x - enemy.x;
+            if (Math.abs(dx) > 2) enemy.vx = dx > 0 ? 2 : -2;
+            else enemy.vx = 0;
+            enemy.x += enemy.vx;
+            // Enemy attacks if close
+            if (Math.abs(player.x - enemy.x) < 40 && Math.abs(player.y - enemy.y) < 28 && enemy.attackTimer === 0) {
+                player.health -= 10;
+                enemy.attackTimer = 30;
+            }
+            if (enemy.attackTimer > 0) enemy.attackTimer--;
+            // Enemy shoots at player every 90 frames
+            if (Math.abs(player.x - enemy.x) < 400 && Math.abs(player.y - enemy.y) < 100 && Math.random() < 1/90) {
+                let angle = Math.atan2((player.y+player.h/2)-(enemy.y+enemy.h/2), (player.x+player.w/2)-(enemy.x+enemy.w/2));
+                bullets.push({x: enemy.x+enemy.w/2, y: enemy.y+enemy.h/2, vx: Math.cos(angle)*6, vy: Math.sin(angle)*6, alive: true});
+            }
+        }
+        // Update bullets
+        for (let bullet of bullets) {
+            if (!bullet.alive) continue;
+            bullet.x += bullet.vx;
+            bullet.y += bullet.vy;
+            // Bullet hits player
+            if (
+                bullet.x > player.x && bullet.x < player.x+player.w &&
+                bullet.y > player.y && bullet.y < player.y+player.h
+            ) {
+                player.health -= 15;
+                bullet.alive = false;
+            }
+            // Bullet out of bounds
+            if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) bullet.alive = false;
+        }
+        // Game over if player health <= 0
+        if (player.health <= 0) {
+            player.health = 0;
+            gameOver = true;
+        }
+    }
+    function draw() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        // Ground
+        ctx.fillStyle = '#228B22';
+        ctx.fillRect(0, groundY+32, canvas.width, 50);
+        // Air blocks
+        ctx.fillStyle = '#888';
+        for (let b of airBlocks) {
+            ctx.fillRect(b.x, b.y, b.w, b.h);
+        }
+        // Draw grappling string
+        if (player.grappling && player.grappleTarget) {
+            ctx.save();
+            ctx.strokeStyle = '#111';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(player.x + player.w/2, player.y);
+            ctx.lineTo(player.grappleTarget.x, player.grappleTarget.y);
+            ctx.stroke();
+            ctx.restore();
+        }
+        // Power-ups
+        for (let p of powerUps) {
+            if (!p.active) continue;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            if (p.type === 'heal') {
+                ctx.fillStyle = '#2ecc40';
+                ctx.beginPath();
+                ctx.arc(0, 0, 14, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText('+', -5, 6);
+            } else if (p.type === 'strength') {
+                ctx.fillStyle = '#f39c12';
+                ctx.beginPath();
+                ctx.arc(0, 0, 14, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText('S', -6, 6);
+            } else if (p.type === 'grapple') {
+                ctx.fillStyle = '#00bfff';
+                ctx.beginPath();
+                ctx.arc(0, 0, 14, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText('G', -6, 6);
+            }
+            ctx.restore();
+        }
+        // Enemies
+        for (let enemy of enemies) {
+            if (!enemy.alive) continue;
+            ctx.fillStyle = '#c0392b';
+            ctx.fillRect(enemy.x, enemy.y, enemy.w, enemy.h);
+            // Enemy health bar
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(enemy.x, enemy.y-10, enemy.w, 6);
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(enemy.x, enemy.y-10, enemy.w * (enemy.health/60), 6);
+        }
+        // Player
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.fillStyle = player.power === 'strength' ? '#f39c12' : '#3498db';
+        ctx.beginPath();
+        ctx.arc(16, 16, 16, 0, 2*Math.PI);
+        ctx.fill();
+        // Attack effect
+        if (player.attacking) {
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(16, 16, 28, 0, Math.PI*2);
+            ctx.stroke();
+        }
+        ctx.restore();
+        // Player health bar
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(20, 50, 100, 10);
+        ctx.fillStyle = '#3498db';
+        ctx.fillRect(20, 50, player.health, 10);
+        // Power-up indicator
+        if (player.power === 'strength') {
+            ctx.fillStyle = '#f39c12';
+            ctx.font = '18px Arial Black';
+            ctx.fillText('Strength!', 140, 60);
+        } else if (player.power === 'grapple') {
+            ctx.fillStyle = '#00bfff';
+            ctx.font = '18px Arial Black';
+            ctx.fillText('Grapple!', 140, 60);
+        }
+        // Score
+        ctx.fillStyle = '#fff';
+        ctx.font = '20px Arial Black';
+        ctx.fillText('Score: '+score, 20, 30);
+        // Draw bullets
+        ctx.save();
+        ctx.fillStyle = '#F7B32B';
+        for (let bullet of bullets) {
+            if (!bullet.alive) continue;
+            ctx.beginPath();
+            ctx.arc(bullet.x, bullet.y, 6, 0, 2*Math.PI);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+    // Game over overlay and restart
+    let gameOver = false;
+    function drawGameOver() {
+        ctx.save();
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = '#22212C';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#FAFAFA';
+        ctx.font = '48px Arial Black';
+        ctx.textAlign = 'center';
+        ctx.fillText('Game Over', canvas.width/2, canvas.height/2 - 20);
+        ctx.font = '28px Arial';
+        ctx.fillText('Press R to Restart', canvas.width/2, canvas.height/2 + 40);
+        ctx.textAlign = 'left';
+        ctx.restore();
+    }
+    document.addEventListener('keydown', function(e) {
+        if (gameOver && (e.key === 'r' || e.key === 'R')) {
+            restartGame();
+        }
+    });
+    function restartGame() {
+        player = { x: 100, y: groundY, vy: 0, w: 32, h: 32, onGround: true, vx: 0, health: 100, attacking: false, attackTimer: 0, power: null, powerTimer: 0, grappling: false, grappleTarget: null, grappleProgress: 0, hasGrapple: false };
+        powerUps = [
+            {x: 350, y: groundY, type: 'heal', active: true},
+            {x: 600, y: groundY, type: 'strength', active: true},
+            {x: 200, y: groundY, type: 'grapple', active: true}
+        ];
+        airBlocks = [
+            {x: 300, y: 180, w: 40, h: 10},
+            {x: 500, y: 120, w: 40, h: 10},
+            {x: 700, y: 80, w: 40, h: 10}
+        ];
+        enemies = [
+            {x: 700, y: groundY, w: 32, h: 32, health: 60, alive: true, attackTimer: 0, vx: 0, vy: 0}
+        ];
+        bullets = [];
+        score = 0;
+        gameOver = false;
+    }
+    function loop() {
+        if (!gameOver) {
+            update();
+            draw();
+        } else {
+            draw();
+            drawGameOver();
+        }
+        requestAnimationFrame(loop);
+    }
+    loop();
+    </script>
 </body>
 </html>
