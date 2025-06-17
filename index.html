@@ -30,7 +30,7 @@
         }
         header.hero p {
             font-size: 1.3em;
-            color: #e0e6ed;
+            color: #e
             max-width: 600px;
             text-shadow: 1px 1px 6px #181c24, 0 0 8px #000;
         }
@@ -97,6 +97,8 @@
             flex-direction: column;
             align-items: center;
             width: auto;
+            position: relative; /* Ensure standMenu is centered relative to game section */
+            min-height: 400px;
         }
         .game-container {
             width: 800px;
@@ -119,40 +121,46 @@
             outline: 2px solid #50e3c2;
         }
         #standMenu {
+            display: none;
             position: fixed;
-            top: 0;
-            left: 0;
+            left: 0; right: 0; top: 0; bottom: 0;
+            margin: 0;
             width: 100vw;
             height: 100vh;
-            background: #181c24e0;
-            z-index: 10;
+            background: rgba(24,28,36,0.92);
+            z-index: 1000;
             display: flex;
             align-items: center;
             justify-content: center;
+            pointer-events: auto;
         }
         #standMenu > div {
             background: #232a34;
-            color: #e0e6ed;
-            box-shadow: 0 2px 24px #111a22cc;
             border-radius: 18px;
-            max-width: 350px;
-            width: 350px;
-            text-align: center;
-            padding: 36px 32px 32px 32px;
+            box-shadow: 0 2px 16px #111a22cc;
+            padding: 36px 32px 28px 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 320px;
+            min-height: 260px;
+        }
+        #standMenu h2 {
+            margin-bottom: 18px;
         }
         .stand-btn {
-            background: #181c24;
-            color: #50e3c2;
             margin: 8px 0;
-            width: 90%;
-            padding: 12px 0;
+            padding: 12px 32px;
+            font-size: 1.1em;
+            background: #50e3c2;
+            color: #181c24;
             border: none;
             border-radius: 8px;
-            font-size: 1.1em;
-            font-family: 'Arial Black', Arial, sans-serif;
+            cursor: pointer;
+            font-weight: bold;
             transition: background 0.2s, color 0.2s;
         }
-        .stand-btn:hover {
+        .stand-btn:hover, .stand-btn:focus {
             background: #4a90e2;
             color: #fff;
         }
@@ -165,6 +173,21 @@
         @media (max-width: 900px) {
             .game-container, canvas#standGame { width: 98vw !important; min-width: 0; }
             section.game-section { width: 100vw; }
+        }
+        #restartStandGameBtn {
+            display: none;
+            margin: 32px auto 0 auto;
+            padding: 10px 28px;
+            font-size: 1.1em;
+            background: #50e3c2;
+            color: #181c24;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
         }
     </style>
 </head>
@@ -194,7 +217,6 @@
                     Some of my interests are <span style="color:#50e3c2;">running</span>, <span style="color:#50e3c2;">playing video games</span>, <span style="color:#50e3c2;">art</span>, and <span style="color:#50e3c2;">eating</span>.<br><br>
                     My favorite video game is <span style="color:#4a90e2;font-weight:bold;">Terraria</span>, my favorite food is <span style="color:#4a90e2;font-weight:bold;">salad</span>, and I enjoy running with friends and drawing anime characters.
                 </p>
-                <p style="margin-top:24px;font-style:italic;color:#50e3c2;">Fun fact: I love drawing anime characters and running with friends!</p>
             </section>
         </div>
         <div id="gameArea" class="tab-area" tabindex="0">
@@ -202,14 +224,15 @@
                 <div class="game-container">
                   <h2 class="game-title">JoJo Stand Battle Game</h2>
                   <canvas id="standGame" width="800" height="320" aria-label="JoJo Stand Battle Game" tabindex="0"></canvas>
+                  <button id="restartStandGameBtn" style="display:none;margin-top:18px;padding:10px 28px;font-size:1.1em;background:#50e3c2;color:#181c24;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">Restart Game</button>
                 </div>
                 <!-- Stand Selection Menu -->
                 <div id="standMenu" aria-modal="true" role="dialog" aria-label="Stand Selection">
-                    <div>
-                        <h2 style="color:#50e3c2;margin-bottom:18px;">Choose Your Stand</h2>
-                        <button class="stand-btn" data-stand="Star Platinum">Star Platinum<br><span style='font-size:0.8em;font-weight:normal;'>Ability: ORA Rush (rapid punches)</span></button><br>
-                        <button class="stand-btn" data-stand="The World">The World<br><span style='font-size:0.8em;font-weight:normal;'>Ability: Time Stop (freeze enemies)</span></button><br>
-                        <button class="stand-btn" data-stand="Crazy Diamond">Crazy Diamond<br><span style='font-size:0.8em;font-weight:normal;'>Ability: Heal (restore health)</span></button>
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:320px;min-height:260px;">
+                        <h2 style="color:#50e3c2;margin-bottom:18px;text-align:center;">Choose Your Stand</h2>
+                        <button class="stand-btn" data-stand="Star Platinum" style="width:220px;">Star Platinum<br><span style='font-size:0.8em;font-weight:normal;'>Ability: ORA Rush (rapid punches)</span></button>
+                        <button class="stand-btn" data-stand="The World" style="width:220px;">The World<br><span style='font-size:0.8em;font-weight:normal;'>Ability: Time Stop (freeze enemies)</span></button>
+                        <button class="stand-btn" data-stand="Crazy Diamond" style="width:220px;">Crazy Diamond<br><span style='font-size:0.8em;font-weight:normal;'>Ability: Heal (restore health)</span></button>
                     </div>
                 </div>
             </section>
@@ -218,26 +241,21 @@
             <section class="intro-section">
                 <h2 style="color:#50e3c2;margin-bottom:12px;">Interesting Historical Facts</h2>
                 <ul style="text-align:left;max-width:600px;margin:0 auto;font-size:1.1em;line-height:1.7;color:#e0e6ed;list-style:none;padding:0;">
-                    <li style="display:flex;align-items:center;margin-bottom:18px;">
-                        <img src="images/great-wall-of-china.png" alt="Great Wall" style="margin-right:12px;width:32px;height:32px;" onerror="this.onerror=null;this.src='https://img.icons8.com/ios-filled/32/great-wall-of-china.png';">
-                        The Great Wall of China is more than 13,000 miles long and was built over several dynasties.
-                    </li>
-                    <li style="display:flex;align-items:center;margin-bottom:18px;">
-                        <img src="images/pyramid.png" alt="Pyramid" style="margin-right:12px;width:32px;height:32px;" onerror="this.onerror=null;this.src='https://img.icons8.com/ios-filled/32/pyramid.png';">
-                        Cleopatra lived closer in time to the moon landing than to the construction of the Great Pyramid of Giza.
-                    </li>
-                    <li style="display:flex;align-items:center;margin-bottom:18px;">
-                        <img src="images/clock.png" alt="Clock" style="margin-right:12px;width:32px;height:32px;" onerror="this.onerror=null;this.src='https://img.icons8.com/ios-filled/32/clock--v1.png';">
-                        The shortest war in history was between Britain and Zanzibar on August 27, 1896. Zanzibar surrendered after 38 minutes.
-                    </li>
-                    <li style="display:flex;align-items:center;margin-bottom:18px;">
-                        <img src="images/paint-palette.png" alt="Da Vinci" style="margin-right:12px;width:32px;height:32px;" onerror="this.onerror=null;this.src='https://img.icons8.com/ios-filled/32/paint-palette.png';">
-                        Leonardo da Vinci could write with one hand and draw with the other at the same time.
-                    </li>
-                    <li style="display:flex;align-items:center;margin-bottom:18px;">
-                        <img src="images/university.png" alt="Oxford" style="margin-right:12px;width:32px;height:32px;" onerror="this.onerror=null;this.src='https://img.icons8.com/ios-filled/32/university.png';">
-                        Oxford University is older than the Aztec Empire.
-                    </li>
+                    <li style="margin-bottom:18px;">
+        The Great Wall of China is more than 13,000 miles long and was built over several dynasties.
+    </li>
+    <li style="margin-bottom:18px;">
+        Cleopatra lived closer in time to the moon landing than to the construction of the Great Pyramid of Giza.
+    </li>
+    <li style="margin-bottom:18px;">
+        The shortest war in history was between Britain and Zanzibar on August 27, 1896. Zanzibar surrendered after 38 minutes.
+    </li>
+    <li style="margin-bottom:18px;">
+        Leonardo da Vinci could write with one hand and draw with the other at the same time.
+    </li>
+    <li style="margin-bottom:18px;">
+        Oxford University is older than the Aztec Empire.
+    </li>
                 </ul>
             </section>
         </div>
@@ -308,6 +326,11 @@
     const standCtx = standGameCanvas.getContext('2d');
     let selectedStand = null;
     let standPlayer, standEnemies, standBullets, standGameOver, standKeys, standAbilityCooldown, standTimeStopTimer, standHealTimer;
+    let oraRushEffectTimer = 0;
+    let oraRushEffectFrames = [];
+    let oraRushPunches = [];
+    let oraRushShowRange = 0;
+    let standEnemiesDefeated = 0;
 
     document.querySelectorAll('.stand-btn').forEach(btn => {
         btn.onclick = function() {
@@ -384,10 +407,29 @@
                 if (!enemy.alive) continue;
                 let dist = Math.abs((standPlayer.x + standPlayer.w/2) - (enemy.x + enemy.w/2));
                 if (dist < 80 && Math.abs(standPlayer.y - enemy.y) < 32) {
-                    enemy.health -= 30;
+                    enemy.health -= 80; // Increased damage
+                    // Add knockback
+                    enemy.vx += 7 * Math.sign(enemy.x - standPlayer.x);
                     if (enemy.health <= 0) enemy.alive = false;
+                    // Add punch effect frame
+                    oraRushEffectFrames.push({
+                        x: enemy.x + enemy.w/2,
+                        y: enemy.y + enemy.h/2,
+                        timer: 14 + Math.floor(Math.random()*6)
+                    });
+                    // Add punch flash effect
+                    for (let i = 0; i < 6; i++) {
+                        oraRushPunches.push({
+                            x: standPlayer.x + standPlayer.w/2 + (standPlayer.facing*32) + Math.random()*24-12,
+                            y: standPlayer.y + 16 + Math.random()*32-16,
+                            facing: standPlayer.facing,
+                            timer: 8 + Math.floor(Math.random()*4)
+                        });
+                    }
                 }
             }
+            oraRushEffectTimer = 18;
+            oraRushShowRange = 16; // Show range for a short time
             standAbilityCooldown = 60;
         }
         if (selectedStand === 'The World' && standKeys['k'] && standAbilityCooldown === 0) {
@@ -418,6 +460,27 @@
             // Enemy attacks
             if (Math.abs(enemy.x - standPlayer.x) < 40 && Math.abs(enemy.y - standPlayer.y) < 32) {
                 if (standTimeStopTimer === 0) standPlayer.health -= 0.5;
+            }
+        }
+        // Enemy respawn logic
+        for (let i = standEnemies.length-1; i >= 0; i--) {
+            if (!standEnemies[i].alive && !standEnemies[i]._counted) {
+                standEnemies[i]._counted = true;
+                standEnemiesDefeated++;
+                // Spawn a new enemy after a short delay
+                setTimeout(() => {
+                    standEnemies.push({
+                        x: 600 + Math.random()*100-50,
+                        y: 220,
+                        w: 32,
+                        h: 48,
+                        health: 200 + 50*standEnemiesDefeated,
+                        alive: true,
+                        vx: -1.5,
+                        stand: 'Za Hando',
+                        standTimer: 0
+                    });
+                }, 700);
             }
         }
         // Game over
@@ -474,12 +537,54 @@
             standCtx.strokeStyle = '#4a90e2';
             standCtx.lineWidth = 4;
             standCtx.strokeRect(-4, -4, enemy.w+8, enemy.h+8);
-            // Health bar
+            // Health bar (centered above enemy)
+            const barWidth = enemy.w + 16;
+            const barX = (enemy.w/2) - (barWidth/2);
+            standCtx.save();
+            standCtx.translate(0, -18);
             standCtx.fillStyle = '#fff';
-            standCtx.fillRect(0, -10, enemy.w, 6);
+            standCtx.fillRect(barX, 0, barWidth, 6);
             standCtx.fillStyle = '#50e3c2';
-            standCtx.fillRect(0, -10, enemy.w * (enemy.health/300), 6);
+            standCtx.fillRect(barX, 0, barWidth * (enemy.health/Math.max(1, (enemy.maxHealth||300))), 6);
             standCtx.restore();
+            standCtx.restore();
+        }
+        // ORA Rush punch flashes
+        if (oraRushEffectTimer > 0 && selectedStand === 'Star Platinum') {
+            for (let i = oraRushPunches.length-1; i >= 0; i--) {
+                let pf = oraRushPunches[i];
+                standCtx.save();
+                standCtx.globalAlpha = Math.max(0, pf.timer/10);
+                standCtx.translate(pf.x, pf.y);
+                standCtx.rotate((Math.random()-0.5)*0.7);
+                standCtx.fillStyle = '#fff';
+                standCtx.beginPath();
+                standCtx.ellipse(0, 0, 18, 8, 0, 0, 2*Math.PI);
+                standCtx.fill();
+                standCtx.strokeStyle = '#50e3c2';
+                standCtx.lineWidth = 2;
+                standCtx.stroke();
+                standCtx.restore();
+                pf.timer--;
+                if (pf.timer <= 0) oraRushPunches.splice(i,1);
+            }
+            for (let i = oraRushEffectFrames.length-1; i >= 0; i--) {
+                let ef = oraRushEffectFrames[i];
+                standCtx.save();
+                standCtx.globalAlpha = Math.max(0, ef.timer/18);
+                standCtx.translate(ef.x, ef.y);
+                standCtx.rotate((Math.random()-0.5)*0.6);
+                standCtx.fillStyle = '#fff';
+                standCtx.font = 'bold 32px Arial Black';
+                standCtx.strokeStyle = '#355C7D';
+                standCtx.lineWidth = 3;
+                standCtx.strokeText('ORA!', -32, 12);
+                standCtx.fillText('ORA!', -32, 12);
+                standCtx.restore();
+                ef.timer--;
+                if (ef.timer <= 0) oraRushEffectFrames.splice(i,1);
+            }
+            oraRushEffectTimer--;
         }
         // UI
         standCtx.fillStyle = '#fff';
@@ -502,11 +607,22 @@
             standCtx.textAlign = 'center';
             standCtx.fillText('Game Over', standGameCanvas.width/2, standGameCanvas.height/2 - 20);
             standCtx.font = '28px Arial';
-            standCtx.fillText('Refresh to play again', standGameCanvas.width/2, standGameCanvas.height/2 + 40);
+            standCtx.fillText('Click Restart to play again', standGameCanvas.width/2, standGameCanvas.height/2 + 40);
             standCtx.textAlign = 'left';
             standCtx.restore();
+            document.getElementById('restartStandGameBtn').style.display = 'inline-block';
+        } else {
+            document.getElementById('restartStandGameBtn').style.display = 'none';
         }
     }
+    // Add restart button logic
+    document.getElementById('restartStandGameBtn').onclick = function() {
+        selectedStand = null;
+        standMenu.style.display = 'flex';
+        standMenu.scrollIntoView({block: 'center', inline: 'center'});
+        this.style.display = 'none';
+        standCtx.clearRect(0,0,standGameCanvas.width,standGameCanvas.height);
+    };
     </script>
     <script>
     // Battle game with fixed grappling and visual string
@@ -588,7 +704,7 @@
             player.attacking = true;
             player.attackTimer = 10;
         }
-        if player.attacking) {
+        if (player.attacking) {
             player.attackTimer--;
             if (player.attackTimer <= 0) player.attacking = false;
             // Player can hit enemy while attacking
